@@ -83,6 +83,8 @@ class DockerLabAutograder:
             msg = "Authentication failed: invalid key or username."
         except paramiko.ssh_exception.NoValidConnectionsError:
             msg = "Connection refused or unreachable."
+        except paramiko.ssh_exception.SSHException as e:
+            msg = f"SSHException: invalid or empty key file. Details: {e}"
         except socket.gaierror:
             msg = "Invalid IP or DNS resolution failed."
         except TimeoutError:
