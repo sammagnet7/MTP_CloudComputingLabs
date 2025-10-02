@@ -1,0 +1,77 @@
+# Merged / optimized Dockerfile
+# Build: docker build -t lab-env:latest .
+# Run: docker run --rm -it -v /home/labDirectory:/home/labDirectory -e HOME=/home/labDirectory lab-env:latest
+
+FROM ubuntu:22.04 AS base
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG NODE_MAJOR=20
+
+# Preserve previous envs from your old file and ensure HOME points to mounted dir
+ENV INSTRUCTOR_SCRIPTS="/home/.evaluationScripts" \
+    LAB_DIRECTORY="/home/labDirectory" \
+    HOME=/home/labDirectory \
+    TERM=xterm-256color \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    PATH="/home/.evaluationScripts:/usr/local/bin:/usr/local/aws-cli/v2/current/bin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# Install base packages, Node (NodeSource), AWS CLI v2, Serverless, Python deps, and Paramiko
+RUN set -eux; \
+    # optional unminimize step like your original (if available)
+    if command -v unminimize >/dev/null 2>&1; then yes | unminimize; fi; \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+      software-properties-common \
+      language-pack-en-base \
+      debconf-utils \
+      ca-certificates \
+      curl gnupg lsb-release unzip wget build-essential \
+      net-tools \
+      nano \
+      vim \
+      less \
+      iproute2 \
+      python3 \
+      python3-pip \
+      jq \
+      man-db \
+      openssh-client && \
+    \
+    # Install Node.js (NodeSource)
+    curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
+    npm install -g npm@latest && \
+    \
+    # Install AWS CLI v2
+    curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip && \
+    unzip -q /tmp/awscliv2.zip -d /tmp && \
+    /tmp/aws/install -i /usr/local/aws-cli -b /usr/local/bin && \
+    rm -rf /tmp/aws /tmp/awscliv2.zip && \
+    \
+    # Python pip packages (including Paramiko) and other python bits
+    python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    python3 -m pip install --no-cache-dir paramiko && \
+    \
+    # Global npm tool (serverless)
+    npm install -g serverless@latest || true && \
+    \
+    # cleanup
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Create the lab directory and instructor scripts dir (matching your earlier file)
+RUN mkdir -p /home/labDirectory /home/.evaluationScripts && \
+    # preserve your root .bashrc lines from previous dockerfile
+    echo "cd /home/labDirectory" > /root/.bashrc && \
+    echo "alias ls='ls --color=always'" >> /root/.bashrc && \
+    echo "rm -f \`find /home -type f -name \"._*\"\`" >> /root/.bashrc
+
+# Optional: add same helpers to skeleton for any created user (keeps parity)
+RUN printf "cd /home/labDirectory\nalias ls='ls --color=always'\n" >> /etc/skel/.bashrc || true
+
+WORKDIR /home/labDirectory
+
+# By default run as root
+USER root
+
+CMD [ "tail", "-f", "/dev/null" ]
