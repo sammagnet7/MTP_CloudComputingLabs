@@ -1,0 +1,14 @@
+{
+  "instructor_iam_username": "instructor-user-serverless",
+  "instructor_access_key_id": "AKIAUJYPNZOJBKATWEYV",
+  "instructor_secret_access_key": "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",
+  "aws_region": "ap-south-1",
+  "imageProcessor": "activity4-image-pipeline-dev-imageProcessor",
+  "analyticsLogger": "activity4-image-pipeline-dev-analyticsLogger",
+  "stack_name": "activity4-image-pipeline-dev",
+  "uploads_bucket": "activity4-image-pipeline-dev-295848233874-uploads",
+  "thumbnails_bucket": "activity4-image-pipeline-dev-295848233874-thumbnails",
+  "analytics_bucket": "activity4-image-pipeline-dev-295848233874-analytics",
+  "jobs_table": "activity4-image-pipeline-dev-295848233874-ImageJobs",
+  "sns_topic_arn": "arn:aws:sns:ap-south-1:295848233874:activity4-image-pipeline-dev-295848233874-ImageEvents"
+}
