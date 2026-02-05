@@ -31,7 +31,7 @@ This is the fastest way to start the demo if you have Java installed.
 2.  Run the application using the wrapper:
     * **Mac/Linux:** `./mvnw spring-boot:run`
     * **Windows:** `mvnw spring-boot:run`
-3.  The app will start on `http://localhost:8080`.
+3.  The app will start on `http://localhost:30000`.
 
 ### Option B: Run with Docker
 The repository already includes a **Multi-Stage `Dockerfile`**. This allows you to build and run the application without installing Java or Maven on your host machine.
@@ -44,14 +44,14 @@ The repository already includes a **Multi-Stage `Dockerfile`**. This allows you 
 
 2.  **Run the Container:**
     ```bash
-    docker run -p 8080:8080 monolith-shop
+    docker run -p 30000:30000 monolith-shop
     ```
 
 ---
 
 ## 🔌 API Endpoints
 
-**Base URL:** `http://localhost:8080/api`
+**Base URL:** `http://localhost:30000/api`
 
 | Method | Endpoint | Description | Request Body Example |
 | :--- | :--- | :--- | :--- |
@@ -91,7 +91,7 @@ Copy and paste these commands into your terminal to simulate a full user purchas
 ### 1. View the Catalog
 Confirm the app is running and data is loaded.
 ```bash
-curl -s http://localhost:8080/api/products
+curl -s http://localhost:30000/api/products
 
 ```
 
@@ -100,11 +100,11 @@ curl -s http://localhost:8080/api/products
 Add a **Smartphone** (ID 1) and two **Mice** (ID 3) to User 1's cart.
 
 ```bash
-curl -X POST http://localhost:8080/api/cart/1/add \
+curl -X POST http://localhost:30000/api/cart/1/add \
   -H "Content-Type: application/json" \
   -d '{"productId": 1, "quantity": 1}'
 
-curl -X POST http://localhost:8080/api/cart/1/add \
+curl -X POST http://localhost:30000/api/cart/1/add \
   -H "Content-Type: application/json" \
   -d '{"productId": 3, "quantity": 2}'
 
@@ -115,7 +115,7 @@ curl -X POST http://localhost:8080/api/cart/1/add \
 This is the "Monolith Action." It processes payment, updates inventory, and sends a mock email.
 
 ```bash
-curl -X POST http://localhost:8080/api/checkout/1
+curl -X POST http://localhost:30000/api/checkout/1
 
 ```
 
@@ -137,7 +137,7 @@ curl -X POST http://localhost:8080/api/checkout/1
 
 You can view the raw database tables using the H2 Web Console.
 
-1. Go to: [http://localhost:8080/h2-console](https://www.google.com/search?q=http://localhost:8080/h2-console)
+1. Go to: [http://localhost:30000/h2-console](https://www.google.com/search?q=http://localhost:30000/h2-console)
 2. **Driver Class:** `org.h2.Driver`
 3. **JDBC URL:** `jdbc:h2:mem:shopdb`
 4. **Username:** `sa`
