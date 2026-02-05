@@ -48,7 +48,15 @@ The repository already includes a **Multi-Stage `Dockerfile`**. This allows you 
     ```
 
 ---
+## 💻 Web UI (Frontend)
 
+The application includes a built-in **Vue.js + Tailwind** storefront served directly by the backend (typical monolithic pattern).
+
+1.  Start the application (via Java or Docker).
+2.  Open your browser to: [http://localhost:8080](http://localhost:30000)
+3.  You can browse products, add them to the cart, and perform the "Checkout" operation visually without using cURL.
+
+---
 ## 🔌 API Endpoints
 
 **Base URL:** `http://localhost:30000/api`
