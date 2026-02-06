@@ -4,7 +4,9 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class NotificationService {
-    public void sendEmail(String email, String subject) {
-        System.out.println("📧 [EMAIL SENT] To: " + email + " | Subject: " + subject);
+    // In a real app, this might save to a 'notification_log' table
+    public void sendOrderConfirmation(String email, Long orderId) {
+        System.out.println("📧 Sending email to " + email + " for Order #" + orderId);
+        // Logic to insert into DB or call SMTP server
     }
 }

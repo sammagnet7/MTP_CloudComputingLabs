@@ -10,4 +10,6 @@ public class ECommerceMonolithApplication {
 		SpringApplication.run(ECommerceMonolithApplication.class, args);
 	}
 
+	
+
 }
