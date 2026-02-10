@@ -61,7 +61,7 @@ router = APIRouter(prefix="/api/v2")
 # 1. POST /payments/ (Process new payment)
 
 
-@router.post("/payments/", response_model=schemas.PaymentResponse)
+@router.post("/payments", response_model=schemas.PaymentResponse)
 def process_payment(
     payment: schemas.PaymentCreate, db: Session = Depends(database.get_db)
 ):
@@ -85,7 +85,8 @@ def process_payment(
 @router.get("/payments/order/{order_id}", response_model=schemas.PaymentResponse)
 def get_payment_by_order(order_id: int, db: Session = Depends(database.get_db)):
     payment = (
-        db.query(models.Payment).filter(models.Payment.order_id == order_id).first()
+        db.query(models.Payment).filter(
+            models.Payment.order_id == order_id).first()
     )
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
@@ -114,14 +115,16 @@ async def get_user_payments(user_id: int, db: Session = Depends(database.get_db)
                 return []  # Or raise error
         except Exception as e:
             print(f"❌ Connection to OrderService failed: {e}")
-            raise HTTPException(status_code=503, detail="OrderService Unavailable")
+            raise HTTPException(
+                status_code=503, detail="OrderService Unavailable")
 
     if not order_ids:
         return []
 
     # Step B: Find payments for those orders in our local DB
     payments = (
-        db.query(models.Payment).filter(models.Payment.order_id.in_(order_ids)).all()
+        db.query(models.Payment).filter(
+            models.Payment.order_id.in_(order_ids)).all()
     )
     return payments
 

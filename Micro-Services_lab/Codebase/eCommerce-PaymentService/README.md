@@ -79,11 +79,11 @@ docker stop payment-service && docker rm payment-service
 Records a successful transaction locally.
 
 * **Method:** `POST`
-* **Endpoint:** `/payments/`
+* **Endpoint:** `/payments`
 * **Curl Example:**
 
 ```bash
-curl -X POST http://localhost:30004/api/v2/payments/ \
+curl -X POST http://localhost:30004/api/v2/payments \
   -H "Content-Type: application/json" \
   -d '{"orderId": 105, "amount": 120.50}' | json_pp
 
