@@ -63,25 +63,24 @@ docker ps
 docker stop product-catalog && docker rm product-catalog
 
 ```
-
 ---
 
 ## 🔌 API Endpoints & Schemas
 
-**Base URL:** `http://localhost:30002`
+**Base URL:** `http://localhost:30002/api/v2`
 
 ### 1. List All Products
 
 Fetches the full catalog list. Replaces the monolith's `/api/products` endpoint.
 
 * **Endpoint:** `GET /products`
+* **Full URL:** `http://localhost:30002/api/v2/products`
 * **Curl Example:**
+
 ```bash
-curl -s http://localhost:30002/products | json_pp
+curl -s http://localhost:30002/api/v2/products | json_pp
 
 ```
-
-
 
 #### **Response Schema (JSON Array)**
 
@@ -112,13 +111,13 @@ curl -s http://localhost:30002/products | json_pp
 Fetches details for a single product. Used by the Checkout service to validate prices.
 
 * **Endpoint:** `GET /products/{id}`
+* **Full URL:** `http://localhost:30002/api/v2/products/{id}`
 * **Curl Example:**
+
 ```bash
-curl -s http://localhost:30002/products/1 | json_pp
+curl -s http://localhost:30002/api/v2/products/1 | json_pp
 
 ```
-
-
 
 #### **Response Schema (JSON Object)**
 
@@ -146,7 +145,7 @@ curl -s http://localhost:30002/products/1 | json_pp
 
 ## 📚 Automatic Documentation
 
-Since this service uses FastAPI, interactive documentation is available out-of-the-box when the container is running.
+Since the router prefix changed, your Swagger UI docs will automatically update to test against the correct `/api/v2` endpoints.
 
 * **Swagger UI:** [http://localhost:30002/docs](https://www.google.com/search?q=http://localhost:30002/docs)
 * **ReDoc:** [http://localhost:30002/redoc](https://www.google.com/search?q=http://localhost:30002/redoc)
