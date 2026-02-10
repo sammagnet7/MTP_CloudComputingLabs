@@ -138,7 +138,7 @@ curl -X POST http://localhost:30000/api/checkout/1 | json_pp
 
 Inspect the raw tables and relationships.
 
-1. **URL:** [http://localhost:30000/h2-console](https://www.google.com/search?q=http://localhost:30000/h2-console)
+1. **URL:** [http://localhost:30000/h2-console](http://localhost:30000/h2-console)
 2. **JDBC URL:** `jdbc:h2:mem:shopdb`
 3. **User:** `sa`
 4. **Password:** *(leave empty)*

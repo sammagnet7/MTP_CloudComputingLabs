@@ -161,3 +161,13 @@ microservice.product.url=http://localhost:30002/api/v2/products
 microservice.payment.url=http://localhost:30004/api/v2/payments
 
 ```
+---
+## 🛠️ Database Console
+
+Inspect the raw tables and relationships.
+
+1. **URL:** [http://localhost:30003/h2-console](http://localhost:30003/h2-console)
+2. **JDBC URL:** `jdbc:h2:mem:orderdb`
+3. **User:** `sa`
+4. **Password:** *(leave empty)*
+5. **Connect** and run: `SELECT * FROM ORDERS`
