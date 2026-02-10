@@ -1,140 +1,129 @@
-# 🛍️ E-Commerce Monolith API Service
+# 🛍️ E-Commerce Monolith App
 
-This repository contains a sample E-commerce Monolithic application designed for "Monolith to Microservices" migration demos. It handles User Management, Products, Cart, Orders, and Mock Payments in a single Spring Boot application.
+This repository contains a **Sample Monolithic Application** designed for "Monolith to Microservices" migration demos. It handles User Management, Products, Inventory, Cart, Orders, and Mock Payments in a single Spring Boot application.
+
+The frontend is a built-in **Single Page Application (SPA)** using Vue.js & Tailwind CSS.
 
 ---
 
-## 📋 Prerequisites & Requirements
+## 📋 Prerequisites
 
-Before running the application, ensure you have the following installed:
-
-### 1. Java (Required for Local Run)
-* **Version:** Java 17 or higher (JDK 17+)
-* **Check version:** `java -version`
-
-### 2. Docker (Optional - for Containerization Demo)
-* **Requirement:** Docker Desktop or Docker Engine
-* **Version:** 20.10+ recommended
-* **Why?** Used if you want to demonstrate containerizing the monolith before splitting it, or if you want to deploy it to Kubernetes later.
-
-### 3. Maven (Optional)
-* The project includes a Maven Wrapper (`mvnw`), so a local Maven installation is not strictly required.
+* **Java:** JDK 17 or higher.
+* **Docker:** (Optional) For containerization demos.
 
 ---
 
 ## 🏃‍♂️ How to Run
 
 ### Option A: Local Run (Java)
-This is the fastest way to start the demo if you have Java installed.
 
-1.  Open your terminal in the project root.
-2.  Run the application using the wrapper:
-    * **Mac/Linux:** `./mvnw spring-boot:run`
-    * **Windows:** `mvnw spring-boot:run`
-3.  The app will start on `http://localhost:30000`.
+1. Open your terminal in the project root.
+2. Run the application:
+* **Mac/Linux:** `./mvnw clean spring-boot:run`
+* **Windows:** `mvnw clean spring-boot:run`
+
+
+3. The app will start on **port 30000**.
 
 ### Option B: Run with Docker
-The repository already includes a **Multi-Stage `Dockerfile`**. This allows you to build and run the application without installing Java or Maven on your host machine.
 
-1.  **Build the Image:**
-    Run this command in the project root:
-    ```bash
-    docker build --no-cache -t monolith-shop .
-    ```
-
-2.  **Run the Container:**
-    ```bash
-    docker run -p 30000:30000 monolith-shop
-    ```
+1. **Build:** `docker build --no-cache -t monolith-shop .`
+2. **Run:** `docker run -p 30000:30000 monolith-shop`
 
 ---
+
 ## 💻 Web UI (Frontend)
 
-The application includes a built-in **Vue.js + Tailwind** storefront served directly by the backend (typical monolithic pattern).
+The application serves a Vue.js frontend directly.
 
-1.  Start the application (via Java or Docker).
-2.  Open your browser to: [http://localhost:8080](http://localhost:30000)
-3.  You can browse products, add them to the cart, and perform the "Checkout" operation visually without using cURL.
+1. Open browser to: **[http://localhost:30000](https://www.google.com/search?q=http://localhost:30000)**
+2. **Default Login:** You are automatically logged in as **"Little Buddha" (User ID 1)**.
+3. **Features:**
+* Browse Products (prices in **Rs.**).
+* View Details (Live Stock + Reviews).
+* **Dashboard:** View Order History & Download Receipts.
+
+
 
 ---
-### 🔌 API Endpoints
+
+## 🔌 API Endpoints
 
 **Base URL:** `http://localhost:30000/api`
 
-#### 📦 Products & Catalog
+### 📦 Products & Catalog
 
-| Method | Endpoint | Description | Request Body Example |
-| --- | --- | --- | --- |
-| **GET** | `/products` | List all available products. | N/A |
-| **GET** | `/products/{id}` | Get detailed product info (includes Stock & Reviews). | N/A |
-| **POST** | `/products/{id}/reviews` | Add a review for a product. | `{"userName": "Dave", "rating": 5, "comment": "Great!"}` |
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| **GET** | `/products` | List all available products. |
+| **GET** | `/products/{id}` | Get detailed info (includes Stock & Reviews). |
+| **POST** | `/products/{id}/reviews` | Add a review (`userName`, `rating`, `comment`). |
 
-#### 🛒 Shopping & Checkout
+### 🛒 Shopping & Checkout
 
-| Method | Endpoint | Description | Request Body Example |
-| --- | --- | --- | --- |
-| **GET** | `/users` | List all users. | N/A |
-| **POST** | `/cart/{userId}/add` | Add item to a user's cart. | `{"productId": 1, "quantity": 1}` |
-| **POST** | `/checkout/{userId}` | Place order (Processes Payment & Inventory). | N/A |
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| **GET** | `/users` | List all users. |
+| **POST** | `/cart/{userId}/add` | Add item to cart (`productId`, `quantity`). |
+| **POST** | `/checkout/{userId}` | **(Transactional)** Place order, deduct stock, charge payment. |
 
-#### 📜 History & Profile
+### 📜 History & Profile
 
-| Method | Endpoint | Description | Request Body Example |
-| --- | --- | --- | --- |
-| **GET** | `/users/{userId}/orders` | Get full order history for a user. | N/A |
-| **GET** | `/orders/{orderId}` | Get details of a specific order. | N/A |
-| **GET** | `/orders/{orderId}/payment` | Check payment status of a specific order. | N/A |
-| **GET** | `/users/{userId}/payments` | **(New)** View all past payments for a user. | N/A |
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| **GET** | `/users/{userId}/orders` | Get full order history for a user. |
+| **GET** | `/orders/{orderId}` | Get itemized receipt of a specific order. |
+| **GET** | `/users/{userId}/payments` | View all past transaction records. |
 
 ---
 
 ## 💾 Pre-Loaded Data (H2 Database)
 
-The application uses an **In-Memory H2 Database**. Data is reset on restart.
+The database is reset on every restart.
 
-### 📦 Products & Stock
+### 👤 Default User
 
-| ID | Name | Price | Initial Stock |
+| ID | Name | Role |
+| --- | --- | --- |
+| `1` | **Little Buddha** | Default Login (Premium Member) |
+| `2` | Alice Dev | Demo User |
+
+### 📦 Key Products
+
+| ID | Name | Price | Stock |
 | --- | --- | --- | --- |
-| `1` | Smartphone | $699.00 | 50 |
-| `2` | Laptop | $1200.00 | 20 |
-| `3` | Microservices Book | $45.00 | 100 |
-
-### ⭐ Pre-Loaded Reviews
-
-* **Smartphone:** 5 Stars ("Great battery life!")
-* **Smartphone:** 4 Stars ("Good, but expensive.")
-* **Book:** 5 Stars ("Changed my career.")
+| `1` | Smartphone | Rs. 699.00 | 50 |
+| `2` | Laptop | Rs. 1200.00 | 20 |
+| `5` | Mechanical Keyboard | Rs. 120.00 | 15 |
+| `8` | Ergonomic Mouse | Rs. 40.00 | 45 |
 
 ---
 
-## 🧪 Quick Test (cURL Commands)
+## 🧪 Quick Test (cURL)
 
-Copy and paste these commands into your terminal to test the specific domains.
+Simulate a full purchase flow for **Little Buddha (User 1)** using the terminal.
 
-### 1. View Product Details (Aggregated Data)
+### 1. View Product Details
 
-This fetches data from Product, Inventory, and Review services in one call.
+Fetches aggregated data (Product + Review + Inventory).
 
 ```bash
-curl -s http://localhost:30000/api/products/1
+curl -s http://localhost:30000/api/products/1 | json_pp
 
 ```
 
 ### 2. Post a Review
 
-Add a new review for the Smartphone.
-
 ```bash
 curl -X POST http://localhost:30000/api/products/1/reviews \
   -H "Content-Type: application/json" \
-  -d '{"userName": "Charlie", "rating": 5, "comment": "Amazing phone, fast delivery!"}'
+  -d '{"userName": "Little Buddha", "rating": 5, "comment": "Best purchase ever!"}'
 
 ```
 
-### 3. Add to Cart & Checkout
+### 3. Purchase Flow (Transactional)
 
-This flow tests the **Transactional boundary** across Inventory and Payment.
+Add the **Smartphone** to cart and checkout.
 
 ```bash
 # Add to Cart
@@ -143,7 +132,7 @@ curl -X POST http://localhost:30000/api/cart/1/add \
   -d '{"productId": 1, "quantity": 1}'
 
 # Checkout (Triggers Payment & Stock Reduction)
-curl -X POST http://localhost:30000/api/checkout/1
+curl -X POST http://localhost:30000/api/checkout/1 | json_pp
 
 ```
 
@@ -151,13 +140,10 @@ curl -X POST http://localhost:30000/api/checkout/1
 
 ## 🛠️ Database Console
 
-You can view the raw database tables using the H2 Web Console.
+Inspect the raw tables and relationships.
 
-1. Go to: [http://localhost:30000/h2-console](https://www.google.com/search?q=http://localhost:30000/h2-console)
-2. **Driver Class:** `org.h2.Driver`
-3. **JDBC URL:** `jdbc:h2:mem:shopdb`
-4. **Username:** `sa`
-5. **Password:** *(leave empty)*
-6. Click **Connect**.
-
----
+1. **URL:** [http://localhost:30000/h2-console](https://www.google.com/search?q=http://localhost:30000/h2-console)
+2. **JDBC URL:** `jdbc:h2:mem:shopdb`
+3. **User:** `sa`
+4. **Password:** *(leave empty)*
+5. **Connect** and run: `SELECT * FROM ORDER_ITEM`
