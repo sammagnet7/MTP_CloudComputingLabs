@@ -1,0 +1,125 @@
+version: '3.8'
+
+services:
+  # ------------------------------------------------------------
+  # 1. MONOLITH (Legacy Core) - Port 30000
+  # ------------------------------------------------------------
+  monolith:
+    container_name: monolith-app
+    build: ../eCommerce-Monolith
+    ports:
+      - "30000:30000"
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:30000/api/products"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ------------------------------------------------------------
+  # 2. INVENTORY SERVICE (Java/Postgres) - Port 30001
+  # ------------------------------------------------------------
+  inventory-db:
+    image: postgres:15
+    container_name: inventory-db
+    environment:
+      POSTGRES_DB: inventorydb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - ecommerce-network
+
+  inventory-service:
+    container_name: inventory-service
+    build: ../eCommerce-InventoryService
+    ports:
+      - "30001:30001"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://inventory-db:5432/inventorydb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION=true
+    depends_on:
+      - inventory-db
+    networks:
+      - ecommerce-network
+
+  # ------------------------------------------------------------
+  # 3. PRODUCT SERVICE (Python/SQLite) - Port 30002
+  # ------------------------------------------------------------
+  product-service:
+    container_name: product-service
+    build: ../eCommerce-ProductService
+    ports:
+      - "30002:30002"
+    environment:
+      - DATABASE_URL=sqlite:///./products.db
+      - PORT=30002
+    networks:
+      - ecommerce-network
+
+  # ------------------------------------------------------------
+  # 4. ORDER SERVICE (Aggregator) - Port 30003
+  # ------------------------------------------------------------
+  order-service:
+    container_name: order-service
+    build: ../eCommerce-OrderService
+    ports:
+      - "30003:30003"
+    environment:
+      - SERVER_PORT=30003
+      # Internal Docker DNS names
+      - MICROSERVICE_INVENTORY_URL=http://inventory-service:30001/api/v2/inventory
+      - MICROSERVICE_PRODUCT_URL=http://product-service:30002/api/v2/products
+      - MICROSERVICE_PAYMENT_URL=http://payment-service:30004/api/v2/payments
+    depends_on:
+      - inventory-service
+      - product-service
+      # Circular dependency note: Order calls Payment (to pay), 
+      # but Payment calls Order (to get history). 
+      # In Docker Compose, we just ensure Payment starts to handle the POST request.
+    networks:
+      - ecommerce-network
+
+  # ------------------------------------------------------------
+  # 5. PAYMENT SERVICE (Python/SQLite) - Port 30004
+  # ------------------------------------------------------------
+  payment-service:
+    container_name: payment-service
+    build: ../eCommerce-PaymentService
+    ports:
+      - "30004:30004"
+    environment:
+      - ORDER_SERVICE_URL=http://order-service:30003/api/v2/orders/users/{userId}
+      - DATABASE_URL=sqlite:///./payments.db
+      - PORT=30004
+    depends_on:
+      # Waits for Order Service to be ready for History lookups
+      order-service:
+        condition: service_started
+    networks:
+      - ecommerce-network
+
+  # ------------------------------------------------------------
+  # 6. FRONTEND (Nginx) - Port 30005
+  # ------------------------------------------------------------
+  frontend:
+    container_name: frontend-ui
+    image: nginx:alpine
+    ports:
+      - "30005:80"
+    volumes:
+      # Mounts the local folder to serve index.html directly
+      - ../eCommerce-Frontend:/usr/share/nginx/html
+    networks:
+      - ecommerce-network
+
+# ------------------------------------------------------------
+# NETWORKS
+# ------------------------------------------------------------
+networks:
+  ecommerce-network:
+    driver: bridge

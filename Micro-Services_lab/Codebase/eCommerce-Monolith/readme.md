@@ -4,7 +4,6 @@ This repository contains a **Sample Monolithic Application** designed for "Monol
 
 The frontend is a built-in **Single Page Application (SPA)** using Vue.js & Tailwind CSS.
 
----
 
 ## 📋 Prerequisites
 
@@ -43,9 +42,6 @@ The application serves a Vue.js frontend directly.
 * View Details (Live Stock + Reviews).
 * **Dashboard:** View Order History & Download Receipts.
 
-
-
----
 
 ## 🔌 API Endpoints
 
