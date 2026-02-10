@@ -7,15 +7,11 @@ INSERT INTO orders (id, user_id, total_amount, status, created_at) VALUES (1, 1,
 -- Order Items for Order #1
 INSERT INTO order_item (id, order_id, product_id, product_name, price, quantity) VALUES (1, 1, 2, 'Laptop', 1200.00, 1);
 INSERT INTO order_item (id, order_id, product_id, product_name, price, quantity) VALUES (2, 1, 8, 'Ergonomic Mouse', 40.00, 1);
--- Payment for Order #1
-INSERT INTO payment (id, order_id, amount, status, transaction_id) VALUES (1, 1, 1240.00, 'SUCCESS', 'TXN_BUDDHA_001');
 
 -- Order #2: A Book (Total: 50)
 INSERT INTO orders (id, user_id, total_amount, status, created_at) VALUES (2, 1, 50.00, 'DELIVERED', CURRENT_TIMESTAMP);
 -- Order Items for Order #2
 INSERT INTO order_item (id, order_id, product_id, product_name, price, quantity) VALUES (3, 2, 7, 'Clean Code Book', 50.00, 1);
--- Payment for Order #2
-INSERT INTO payment (id, order_id, amount, status, transaction_id) VALUES (2, 2, 50.00, 'SUCCESS', 'TXN_BUDDHA_002');
 
 
 -- 3. RESET COUNTERS
