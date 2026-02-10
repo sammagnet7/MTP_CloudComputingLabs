@@ -30,7 +30,7 @@ INSERT INTO review (id, product_id, user_name, rating, comment, created_at) VALU
 INSERT INTO review (id, product_id, user_name, rating, comment, created_at) VALUES (2, 1, 'Alice Dev', 4, 'Good, but expensive.', CURRENT_TIMESTAMP);
 INSERT INTO review (id, product_id, user_name, rating, comment, created_at) VALUES (3, 3, 'Bob Ops', 5, 'Changed my career.', CURRENT_TIMESTAMP);
 
--- 3. RESET COUNTERS (The Fix)
+-- 3. RESET COUNTERS
 ALTER TABLE category ALTER COLUMN id RESTART WITH 3;
 ALTER TABLE users ALTER COLUMN id RESTART WITH 3;
 ALTER TABLE product ALTER COLUMN id RESTART WITH 4;

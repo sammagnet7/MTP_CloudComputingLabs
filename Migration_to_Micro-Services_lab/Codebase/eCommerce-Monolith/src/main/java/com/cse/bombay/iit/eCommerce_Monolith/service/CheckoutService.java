@@ -10,7 +10,7 @@ import com.cse.bombay.iit.eCommerce_Monolith.model.Cart;
 import com.cse.bombay.iit.eCommerce_Monolith.model.CartItem;
 import com.cse.bombay.iit.eCommerce_Monolith.model.Order;
 import com.cse.bombay.iit.eCommerce_Monolith.model.Product;
-import com.cse.bombay.iit.eCommerce_Monolith.model.User;
+//import com.cse.bombay.iit.eCommerce_Monolith.model.User;
 import com.cse.bombay.iit.eCommerce_Monolith.repository.CartRepository;
 import com.cse.bombay.iit.eCommerce_Monolith.repository.OrderRepository;
 import com.cse.bombay.iit.eCommerce_Monolith.repository.UserRepository;
@@ -36,7 +36,7 @@ public class CheckoutService {
                 .orElseThrow(() -> new RuntimeException("Cart empty"));
         if(cart.getItems().isEmpty()) throw new RuntimeException("Cart is empty");
 
-        User user = userRepo.findById(userId).orElseThrow();
+        //User user = userRepo.findById(userId).orElseThrow();
 
         // 2. Calculate Total & Prepare Order Items
         double total = 0.0;
@@ -78,7 +78,7 @@ public class CheckoutService {
         cartRepo.delete(cart);
 
         // 7. NOTIFICATION SERVICE CALL (Step 3)
-        notificationService.sendOrderConfirmation(user.getEmail(), order.getId());
+        //notificationService.sendOrderConfirmation(user.getEmail(), order.getId());
 
         return order;
     }

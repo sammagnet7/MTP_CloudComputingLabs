@@ -1,5 +1,6 @@
 package com.cse.bombay.iit.eCommerce_Monolith.service;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,5 +25,14 @@ public class PaymentService {
         payment.setTransactionId(UUID.randomUUID().toString());
         
         paymentRepo.save(payment);
+    }
+
+    public Payment getPaymentByOrderId(Long orderId) {
+        return paymentRepo.findByOrderId(orderId)
+                .orElseThrow(() -> new RuntimeException("Payment info not found for Order ID: " + orderId));
+    }
+
+    public List<Payment> getUserPaymentHistory(Long userId) {
+        return paymentRepo.findHistoryByUserId(userId);
     }
 }

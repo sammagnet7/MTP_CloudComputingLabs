@@ -17,12 +17,15 @@ import org.springframework.web.bind.annotation.RestController;
 import com.cse.bombay.iit.eCommerce_Monolith.model.Cart;
 import com.cse.bombay.iit.eCommerce_Monolith.model.CartItem;
 import com.cse.bombay.iit.eCommerce_Monolith.model.Order;
+import com.cse.bombay.iit.eCommerce_Monolith.model.Payment;
 import com.cse.bombay.iit.eCommerce_Monolith.model.Product;
 import com.cse.bombay.iit.eCommerce_Monolith.model.Review;
 import com.cse.bombay.iit.eCommerce_Monolith.model.User;
 import com.cse.bombay.iit.eCommerce_Monolith.service.CartService;
 import com.cse.bombay.iit.eCommerce_Monolith.service.CheckoutService;
 import com.cse.bombay.iit.eCommerce_Monolith.service.InventoryService;
+import com.cse.bombay.iit.eCommerce_Monolith.service.OrderService;
+import com.cse.bombay.iit.eCommerce_Monolith.service.PaymentService;
 import com.cse.bombay.iit.eCommerce_Monolith.service.ProductService;
 import com.cse.bombay.iit.eCommerce_Monolith.service.ReviewService;
 import com.cse.bombay.iit.eCommerce_Monolith.service.UserService;
@@ -37,6 +40,10 @@ public class ShopController {
     @Autowired private CheckoutService checkoutService;
     @Autowired private ReviewService reviewService;
     @Autowired private InventoryService inventoryService;
+    @Autowired private OrderService orderService;
+    @Autowired private PaymentService paymentService;
+
+
 
     // --- Read Operations ---
     @GetMapping("/products")
@@ -52,7 +59,8 @@ public class ShopController {
         Map<String, Object> response = new HashMap<>();
         response.put("product", product);
         response.put("stock", stock);
-        //response.put("reviews", product.getReviews());
+        //response.put("reviews", product.getCategory());
+        response.put("reviews", product.getReviews());
         
         return response;
     }
@@ -83,5 +91,29 @@ public class ShopController {
         String comment = (String) payload.get("comment");
         
         return reviewService.addReview(id, user, rating, comment);
+    }
+
+    // 1. GET User's Order History
+    @GetMapping("/users/{userId}/orders")
+    public List<Order> getUserOrders(@PathVariable Long userId) {
+        return orderService.getUserOrders(userId);
+    }
+
+    // 2. GET Specific Order Details
+    @GetMapping("/orders/{orderId}")
+    public Order getOrderDetails(@PathVariable Long orderId) {
+        return orderService.getOrderById(orderId);
+    }
+
+    // 3. GET Payment Status for an Order
+    @GetMapping("/orders/{orderId}/payment")
+    public Payment getOrderPaymentStatus(@PathVariable Long orderId) {
+        return paymentService.getPaymentByOrderId(orderId);
+    }
+
+    // GET User's Payment History
+    @GetMapping("/users/{userId}/payments")
+    public List<Payment> getUserPayments(@PathVariable Long userId) {
+        return paymentService.getUserPaymentHistory(userId);
     }
 }

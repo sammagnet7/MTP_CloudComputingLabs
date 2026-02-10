@@ -2,6 +2,8 @@ package com.cse.bombay.iit.eCommerce_Monolith.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,12 +27,12 @@ public class Product {
     private String description; // New Field
     private Double price;
     
-    // Note: "Stock" is removed. It now lives in the Inventory Service/Table.
-
+    //@JsonIgnore
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @JsonIgnore
     // One-to-Many relationship for fetching reviews
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Review> reviews;

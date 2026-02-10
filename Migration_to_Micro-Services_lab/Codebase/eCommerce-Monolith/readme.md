@@ -57,17 +57,34 @@ The application includes a built-in **Vue.js + Tailwind** storefront served dire
 3.  You can browse products, add them to the cart, and perform the "Checkout" operation visually without using cURL.
 
 ---
-## 🔌 API Endpoints
+### 🔌 API Endpoints
 
 **Base URL:** `http://localhost:30000/api`
 
+#### 📦 Products & Catalog
+
 | Method | Endpoint | Description | Request Body Example |
 | --- | --- | --- | --- |
-| **GET** | `/products` | List all products (summary). | N/A |
-| **GET** | `/products/{id}` | **(New)** Get details + Stock + Reviews. | N/A |
-| **POST** | `/products/{id}/reviews` | **(New)** Add a review for a product. | `{"userName": "Dave", "rating": 5, "comment": "Great!"}` |
-| **POST** | `/cart/{userId}/add` | Add item to cart. | `{"productId": 1, "quantity": 1}` |
-| **POST** | `/checkout/{userId}` | Place order (Inventory/Payment/Email). | N/A |
+| **GET** | `/products` | List all available products. | N/A |
+| **GET** | `/products/{id}` | Get detailed product info (includes Stock & Reviews). | N/A |
+| **POST** | `/products/{id}/reviews` | Add a review for a product. | `{"userName": "Dave", "rating": 5, "comment": "Great!"}` |
+
+#### 🛒 Shopping & Checkout
+
+| Method | Endpoint | Description | Request Body Example |
+| --- | --- | --- | --- |
+| **GET** | `/users` | List all users. | N/A |
+| **POST** | `/cart/{userId}/add` | Add item to a user's cart. | `{"productId": 1, "quantity": 1}` |
+| **POST** | `/checkout/{userId}` | Place order (Processes Payment & Inventory). | N/A |
+
+#### 📜 History & Profile
+
+| Method | Endpoint | Description | Request Body Example |
+| --- | --- | --- | --- |
+| **GET** | `/users/{userId}/orders` | Get full order history for a user. | N/A |
+| **GET** | `/orders/{orderId}` | Get details of a specific order. | N/A |
+| **GET** | `/orders/{orderId}/payment` | Check payment status of a specific order. | N/A |
+| **GET** | `/users/{userId}/payments` | **(New)** View all past payments for a user. | N/A |
 
 ---
 
