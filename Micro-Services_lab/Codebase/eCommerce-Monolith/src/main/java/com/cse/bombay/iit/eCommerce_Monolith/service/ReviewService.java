@@ -1,5 +1,7 @@
 package com.cse.bombay.iit.eCommerce_Monolith.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -24,5 +26,12 @@ public class ReviewService {
         review.setComment(comment);
         
         return reviewRepo.save(review);
+    }
+
+    public List<Review> getReviewsByProductId(Long productId) {
+        if (!productRepo.existsById(productId)) {
+            throw new RuntimeException("Product not found");
+        }
+        return reviewRepo.findByProductId(productId);
     }
 }

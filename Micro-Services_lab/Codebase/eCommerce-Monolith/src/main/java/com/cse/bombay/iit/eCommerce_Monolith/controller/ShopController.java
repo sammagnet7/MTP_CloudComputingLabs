@@ -84,6 +84,11 @@ public class ShopController {
         return checkoutService.placeOrder(userId);
     }
 
+    @GetMapping("/products/{productId}/reviews")
+    public List<Review> getProductReviews(@PathVariable Long productId) {
+        return reviewService.getReviewsByProductId(productId);
+    }
+
     @PostMapping("/products/{id}/reviews")
     public Review addReview(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
         String user = (String) payload.get("userName");
