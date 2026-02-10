@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, APIRouter
 from sqlalchemy.orm import Session
 from typing import List
 import models
@@ -6,6 +6,7 @@ import schemas
 import database
 
 app = FastAPI(title="Product Catalog Service", version="1.0")
+router = APIRouter(prefix="/api/v2")
 
 # Create tables on startup (for demo purposes)
 models.Base.metadata.create_all(bind=database.engine)
@@ -29,7 +30,7 @@ def seed_data(db: Session):
         db.commit()
 
 
-@app.on_event("startup")
+@router.on_event("startup")
 def startup_event():
     db = database.SessionLocal()
     seed_data(db)
@@ -38,7 +39,7 @@ def startup_event():
 # --- ROUTES ---
 
 
-@app.get("/products", response_model=List[schemas.ProductResponse])
+@router.get("/products", response_model=List[schemas.ProductResponse])
 def get_all_products(db: Session = Depends(database.get_db)):
     """
     Fetch all products. 
@@ -47,7 +48,7 @@ def get_all_products(db: Session = Depends(database.get_db)):
     return db.query(models.Product).all()
 
 
-@app.get("/products/{product_id}", response_model=schemas.ProductResponse)
+@router.get("/products/{product_id}", response_model=schemas.ProductResponse)
 def get_product(product_id: int, db: Session = Depends(database.get_db)):
     """
     Fetch specific product details.
@@ -58,3 +59,6 @@ def get_product(product_id: int, db: Session = Depends(database.get_db)):
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
+
+
+app.include_router(router)
