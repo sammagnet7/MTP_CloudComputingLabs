@@ -1,7 +1,5 @@
 package com.cse.bombay.iit.eCommerce_Monolith.controller;
 
-
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,18 +32,24 @@ import com.cse.bombay.iit.eCommerce_Monolith.service.UserService;
 @RequestMapping("/api")
 public class ShopController {
 
-    @Autowired private ProductService productService;
-    @Autowired private UserService userService;
-    @Autowired private CartService cartService;
-    @Autowired private CheckoutService checkoutService;
-    @Autowired private ReviewService reviewService;
-    @Autowired private InventoryService inventoryService;
-    @Autowired private OrderService orderService;
-    @Autowired private PaymentService paymentService;
+    @Autowired
+    private ProductService productService;
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private CartService cartService;
+    @Autowired
+    private CheckoutService checkoutService;
+    @Autowired
+    private ReviewService reviewService;
+    @Autowired
+    private InventoryService inventoryService;
+    @Autowired
+    private OrderService orderService;
+    @Autowired
+    private PaymentService paymentService;
 
-
-
-    // --- Read Operations ---
+    // --- Product endpoints---
     @GetMapping("/products")
     public List<Product> getAllProducts() {
         return productService.getAllProducts();
@@ -55,23 +59,25 @@ public class ShopController {
     public Map<String, Object> getProductDetails(@PathVariable Long id) {
         Product product = productService.getProductById(id); // You need to add this method to ProductService
         Integer stock = inventoryService.getStock(id);
-        
+
         Map<String, Object> response = new HashMap<>();
         response.put("product", product);
         response.put("stock", stock);
-        //response.put("reviews", product.getCategory());
+        // response.put("reviews", product.getCategory());
         response.put("reviews", product.getReviews());
-        
+
         return response;
     }
+
+    // --- User endpoints---
 
     @GetMapping("/users")
     public List<User> getAllUsers() {
         return userService.getAllUsers();
     }
 
-    // --- Write Operations ---
-    
+    // --- Order endpoints---
+
     @PostMapping("/cart/{userId}/add")
     public Cart addToCart(@PathVariable Long userId, @RequestBody CartItem item) {
         // Delegate complex logic to Service
@@ -84,6 +90,20 @@ public class ShopController {
         return checkoutService.placeOrder(userId);
     }
 
+    // GET User's Order History
+    @GetMapping("/users/{userId}/orders")
+    public List<Order> getUserOrders(@PathVariable Long userId) {
+        return orderService.getUserOrders(userId);
+    }
+
+    // GET Specific Order Details
+    @GetMapping("/orders/{orderId}")
+    public Order getOrderDetails(@PathVariable Long orderId) {
+        return orderService.getOrderById(orderId);
+    }
+
+    // --- Review endpoints---
+
     @GetMapping("/products/{productId}/reviews")
     public List<Review> getProductReviews(@PathVariable Long productId) {
         return reviewService.getReviewsByProductId(productId);
@@ -94,23 +114,13 @@ public class ShopController {
         String user = (String) payload.get("userName");
         Integer rating = (Integer) payload.get("rating");
         String comment = (String) payload.get("comment");
-        
+
         return reviewService.addReview(id, user, rating, comment);
     }
 
-    // 1. GET User's Order History
-    @GetMapping("/users/{userId}/orders")
-    public List<Order> getUserOrders(@PathVariable Long userId) {
-        return orderService.getUserOrders(userId);
-    }
+    // --- Payments endpoints---
 
-    // 2. GET Specific Order Details
-    @GetMapping("/orders/{orderId}")
-    public Order getOrderDetails(@PathVariable Long orderId) {
-        return orderService.getOrderById(orderId);
-    }
-
-    // 3. GET Payment Status for an Order
+    // GET Payment Status for an Order
     @GetMapping("/orders/{orderId}/payment")
     public Payment getOrderPaymentStatus(@PathVariable Long orderId) {
         return paymentService.getPaymentByOrderId(orderId);
