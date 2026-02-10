@@ -1,5 +1,6 @@
 package com.cse.bombay.iit.eCommerce_Monolith.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,11 +10,11 @@ import org.springframework.stereotype.Service;
 import com.cse.bombay.iit.eCommerce_Monolith.model.Cart;
 import com.cse.bombay.iit.eCommerce_Monolith.model.CartItem;
 import com.cse.bombay.iit.eCommerce_Monolith.model.Order;
+import com.cse.bombay.iit.eCommerce_Monolith.model.OrderItem;
 import com.cse.bombay.iit.eCommerce_Monolith.model.Product;
 //import com.cse.bombay.iit.eCommerce_Monolith.model.User;
 import com.cse.bombay.iit.eCommerce_Monolith.repository.CartRepository;
 import com.cse.bombay.iit.eCommerce_Monolith.repository.OrderRepository;
-import com.cse.bombay.iit.eCommerce_Monolith.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -22,64 +23,83 @@ public class CheckoutService {
 
     @Autowired private CartRepository cartRepo;
     @Autowired private OrderRepository orderRepo;
-    @Autowired private UserRepository userRepo;
-    
-    // THE SEAMS: We inject the new services here
+    @Autowired private ProductService productService;
     @Autowired private InventoryService inventoryService;
     @Autowired private PaymentService paymentService;
-    @Autowired private NotificationService notificationService;
 
     @Transactional
     public Order placeOrder(Long userId) {
-        // 1. Get Cart
+        // 1. Get User's Cart
         Cart cart = cartRepo.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart empty"));
-        if(cart.getItems().isEmpty()) throw new RuntimeException("Cart is empty");
+                .orElseThrow(() -> new RuntimeException("Cart not found for user: " + userId));
 
-        //User user = userRepo.findById(userId).orElseThrow();
-
-        // 2. Calculate Total & Prepare Order Items
-        double total = 0.0;
-        List<Product> productsToOrder = new ArrayList<>(); // To hold temp data
-        
-        // 3. INVENTORY SERVICE CALL (Step 1)
-        for (CartItem item : cart.getItems()) {
-            boolean hasStock = inventoryService.checkAndReduceStock(item.getProductId(), item.getQuantity());
-            if (!hasStock) {
-                throw new RuntimeException("Product ID " + item.getProductId() + " is out of stock!");
-            }
-            // Logic to calculate price would usually fetch from ProductService here
-            // For brevity, assuming we have price access or passed it in
+        if (cart.getItems().isEmpty()) {
+            throw new RuntimeException("Cart is empty! Add items before checkout.");
         }
-        
-        // (Simplified total calc for demo)
-        total = 100.00; 
 
-        // 4. SAVE ORDER (Pending State)
+        // 2. Prepare Order Object
         Order order = new Order();
         order.setUserId(userId);
-        order.setTotalAmount(total);
+        order.setCreatedAt(LocalDateTime.now());
         order.setStatus("PROCESSING");
-        order = orderRepo.save(order);
+        order.setItems(new ArrayList<>()); // Initialize list to avoid NullPointer
 
-        // 5. PAYMENT SERVICE CALL (Step 2)
-        try {
-            paymentService.processPayment(order.getId(), total);
-            order.setStatus("PAID");
-        } catch (Exception e) {
-            order.setStatus("PAYMENT_FAILED");
-            // In real world: Rollback inventory here!
-            orderRepo.save(order);
-            throw new RuntimeException("Payment failed");
+        double calculatedTotal = 0.0;
+
+        // 3. Process Each Cart Item
+        for (CartItem cartItem : cart.getItems()) {
+            Long productId = cartItem.getProductId();
+            int quantity = cartItem.getQuantity();
+
+            // A. Fetch Product (To get real Name & Price)
+            Product product = productService.getProductById(productId);
+
+            // B. Check & Reduce Stock (Inventory Domain)
+            boolean hasStock = inventoryService.checkAndReduceStock(productId, quantity);
+            if (!hasStock) {
+                throw new RuntimeException("Out of Stock: " + product.getName());
+            }
+
+            // C. Calculate Price for this item
+            double itemTotal = product.getPrice() * quantity;
+            calculatedTotal += itemTotal;
+
+            // D. Create Order Item (History Record)
+            // This preserves the price *at the time of purchase*
+            OrderItem orderItem = new OrderItem();
+            orderItem.setProductId(productId);
+            orderItem.setProductName(product.getName());
+            orderItem.setPrice(product.getPrice());
+            orderItem.setQuantity(quantity);
+            
+            // E. Link to Order
+            order.addOrderItem(orderItem); 
         }
-        orderRepo.save(order);
 
-        // 6. CLEAR CART
+        // 4. Set Final Total
+        order.setTotalAmount(calculatedTotal);
+
+        // 5. Save Order (Cascade will save OrderItems automatically)
+        Order savedOrder = orderRepo.save(order);
+
+        // 6. Process Payment (Payment Domain)
+        try {
+            // We pass the REAL calculated total here
+            paymentService.processPayment(savedOrder.getId(), calculatedTotal);
+            
+            // If successful, update status
+            savedOrder.setStatus("PAID");
+            orderRepo.save(savedOrder);
+            
+        } catch (Exception e) {
+            // If Payment fails, RuntimeException triggers @Transactional rollback
+            // This undoes the Inventory reduction and Order save automatically
+            throw new RuntimeException("Payment Failed: " + e.getMessage());
+        }
+
+        // 7. Clear Cart (Shopping Domain)
         cartRepo.delete(cart);
 
-        // 7. NOTIFICATION SERVICE CALL (Step 3)
-        //notificationService.sendOrderConfirmation(user.getEmail(), order.getId());
-
-        return order;
+        return savedOrder;
     }
 }
