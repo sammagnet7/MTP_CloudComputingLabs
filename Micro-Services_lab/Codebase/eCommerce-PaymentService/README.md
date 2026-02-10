@@ -22,7 +22,7 @@ The application is configured via environment variables.
 
 | Variable | Description | Default Value |
 | --- | --- | --- |
-| `MONOLITH_URL` | URL to fetch User Orders from the legacy system. | `http://localhost:30000/api/users/{userId}/orders` |
+| `ORDER_SERVICE_URL` | URL to fetch User Orders from the legacy system. | `http://localhost:30003/orders/api/users/{userId}` |
 | `DATABASE_URL` | Connection string for the local database. | `sqlite:///./payments.db` |
 | `PORT` | Internal container port. | `30004` |
 
@@ -41,13 +41,13 @@ docker build -t payment-service:v2 .
 
 Run the service on host port **30004**.
 
-> **Note:** If running the Monolith on your host machine, use `host.docker.internal` instead of `localhost` for the `MONOLITH_URL` so the container can reach your computer.
+> **Note:** If running the Monolith on your host machine, use `host.docker.internal` instead of `localhost` for the `ORDER_SERVICE_URL` so the container can reach your computer.
 
 ```bash
 docker run --rm \
   -p 30004:30004 \
   --name payment-service \
-  -e MONOLITH_URL="http://host.docker.internal:30000/api/users/{userId}/orders" \
+  -e ORDER_SERVICE_URL="http://localhost:30003/orders/api/users/{userId}" \
   payment-service:v2
 
 ```

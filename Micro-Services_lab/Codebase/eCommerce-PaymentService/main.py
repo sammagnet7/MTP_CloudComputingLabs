@@ -14,8 +14,9 @@ import database
 # ==========================================
 # ⚙️ CONFIG & SEEDING
 # ==========================================
-MONOLITH_URL = os.getenv(
-    "MONOLITH_URL", "http://localhost:30000/api/users/{userId}/orders")
+ORDER_SERVICE_URL = os.getenv(
+    "ORDER_SERVICE_URL", "http://localhost:30003/orders/api/users/{userId}"
+)
 
 
 def seed_data(db: Session):
@@ -23,10 +24,20 @@ def seed_data(db: Session):
     if db.query(models.Payment).count() == 0:
         print("🌱 Seeding initial payment data...")
         # Match data from your SQL script
-        p1 = models.Payment(id=1, order_id=1, amount=1240.00,
-                            status="SUCCESS", transaction_id="TXN_BUDDHA_001")
-        p2 = models.Payment(id=2, order_id=2, amount=50.00,
-                            status="SUCCESS", transaction_id="TXN_BUDDHA_002")
+        p1 = models.Payment(
+            id=1,
+            order_id=1,
+            amount=1240.00,
+            status="SUCCESS",
+            transaction_id="TXN_BUDDHA_001",
+        )
+        p2 = models.Payment(
+            id=2,
+            order_id=2,
+            amount=50.00,
+            status="SUCCESS",
+            transaction_id="TXN_BUDDHA_002",
+        )
         db.add_all([p1, p2])
         db.commit()
 
@@ -40,6 +51,7 @@ async def lifespan(app: FastAPI):
     db.close()
     yield
 
+
 app = FastAPI(title="Payment Microservice", lifespan=lifespan)
 router = APIRouter(prefix="/api/v2")
 # ==========================================
@@ -50,30 +62,35 @@ router = APIRouter(prefix="/api/v2")
 
 
 @router.post("/payments/", response_model=schemas.PaymentResponse)
-def process_payment(payment: schemas.PaymentCreate, db: Session = Depends(database.get_db)):
+def process_payment(
+    payment: schemas.PaymentCreate, db: Session = Depends(database.get_db)
+):
     print(f"💳 Processing payment for Order {payment.orderId}")
 
     db_payment = models.Payment(
         order_id=payment.orderId,
         amount=payment.amount,
         status="SUCCESS",
-        transaction_id=str(uuid.uuid4())
+        transaction_id=str(uuid.uuid4()),
     )
     db.add(db_payment)
     db.commit()
     db.refresh(db_payment)
     return db_payment
 
+
 # 2. GET /payments/order/{id} (Single Order lookup)
 
 
 @router.get("/payments/order/{order_id}", response_model=schemas.PaymentResponse)
 def get_payment_by_order(order_id: int, db: Session = Depends(database.get_db)):
-    payment = db.query(models.Payment).filter(
-        models.Payment.order_id == order_id).first()
+    payment = (
+        db.query(models.Payment).filter(models.Payment.order_id == order_id).first()
+    )
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
     return payment
+
 
 # 3. GET /payments/users/{id} (User History - STRANGLER PATTERN)
 
@@ -81,9 +98,9 @@ def get_payment_by_order(order_id: int, db: Session = Depends(database.get_db)):
 @router.get("/payments/users/{user_id}", response_model=List[schemas.PaymentResponse])
 async def get_user_payments(user_id: int, db: Session = Depends(database.get_db)):
 
-    # Step A: Ask Monolith for this user's orders
-    url = MONOLITH_URL.format(userId=user_id)
-    print(f"🔍 Fetching orders from Monolith: {url}")
+    # Step A: Ask OrderService for this user's orders
+    url = ORDER_SERVICE_URL.format(userId=user_id)
+    print(f"🔍 Fetching orders from OrderService: {url}")
 
     order_ids = []
     async with httpx.AsyncClient() as client:
@@ -91,20 +108,22 @@ async def get_user_payments(user_id: int, db: Session = Depends(database.get_db)
             resp = await client.get(url)
             if resp.status_code == 200:
                 orders = resp.json()
-                order_ids = [order['id'] for order in orders]
+                order_ids = [order["id"] for order in orders]
             else:
-                print(f"⚠️ Monolith returned {resp.status_code}")
+                print(f"⚠️ OrderService returned {resp.status_code}")
                 return []  # Or raise error
         except Exception as e:
-            print(f"❌ Connection to Monolith failed: {e}")
-            raise HTTPException(status_code=503, detail="Monolith Unavailable")
+            print(f"❌ Connection to OrderService failed: {e}")
+            raise HTTPException(status_code=503, detail="OrderService Unavailable")
 
     if not order_ids:
         return []
 
     # Step B: Find payments for those orders in our local DB
-    payments = db.query(models.Payment).filter(
-        models.Payment.order_id.in_(order_ids)).all()
+    payments = (
+        db.query(models.Payment).filter(models.Payment.order_id.in_(order_ids)).all()
+    )
     return payments
+
 
 app.include_router(router)
