@@ -22,7 +22,7 @@ The application is configured via environment variables.
 
 | Variable | Description | Default Value |
 | --- | --- | --- |
-| `ORDER_SERVICE_URL` | URL to fetch User Orders from the legacy system. | `http://localhost:30003/orders/api/users/{userId}` |
+| `ORDER_SERVICE_URL` | URL to fetch User Orders from the legacy system. | `http://localhost:30003/api/v2/orders/users/{userId}` |
 | `DATABASE_URL` | Connection string for the local database. | `sqlite:///./payments.db` |
 | `PORT` | Internal container port. | `30004` |
 
@@ -47,7 +47,7 @@ Run the service on host port **30004**.
 docker run --rm \
   -p 30004:30004 \
   --name payment-service \
-  -e ORDER_SERVICE_URL="http://localhost:30003/orders/api/users/{userId}" \
+  -e ORDER_SERVICE_URL="http://localhost:30003/api/v2/orders/users/{userId}" \
   payment-service:v2
 
 ```

@@ -15,7 +15,7 @@ import database
 # ⚙️ CONFIG & SEEDING
 # ==========================================
 ORDER_SERVICE_URL = os.getenv(
-    "ORDER_SERVICE_URL", "http://localhost:30003/orders/api/users/{userId}"
+    "ORDER_SERVICE_URL", "http://localhost:30003/api/v2/orders/users/{userId}"
 )
 
 
