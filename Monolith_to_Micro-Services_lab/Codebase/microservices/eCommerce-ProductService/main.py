@@ -17,14 +17,22 @@ models.Base.metadata.create_all(bind=database.engine)
 def seed_data(db: Session):
     if db.query(models.Product).count() == 0:
         products = [
-            models.Product(id=1, name="Smartphone", price=699.00,
-                           description="Flagship phone", category_id=101),
-            models.Product(id=2, name="Laptop", price=1200.00,
-                           description="Gaming Laptop", category_id=102),
-            models.Product(id=5, name="Mechanical Keyboard", price=120.00,
-                           description="Clicky keys", category_id=103),
-            models.Product(id=8, name="Ergonomic Mouse", price=40.00,
-                           description="Wrist friendly", category_id=103),
+            models.Product(id=1, name="Smartphone",
+                           description="Latest model with 5G and AI camera", price=699.00, category_id=1),
+            models.Product(
+                id=2, name="Laptop", description="High performance developer machine", price=1200.00, category_id=1),
+            models.Product(id=3, name="Microservices Book",
+                           description="Learn how to break monoliths safely", price=45.00, category_id=2),
+            models.Product(id=4, name="Wireless Headphones",
+                           description="Noise cancelling over-ear headphones", price=250.00, category_id=1),
+            models.Product(id=5, name="Mechanical Keyboard",
+                           description="RGB Backlit with Cherry MX Red switches", price=120.00, category_id=3),
+            models.Product(id=6, name="4K Monitor",
+                           description="27-inch Ultra HD display for coding", price=350.00, category_id=1),
+            models.Product(id=7, name="Clean Code Book",
+                           description="A Handbook of Agile Software Craftsmanship", price=50.00, category_id=2),
+            models.Product(id=8, name="Ergonomic Mouse",
+                           description="Vertical mouse to prevent wrist strain", price=40.00, category_id=3),
         ]
         db.add_all(products)
         db.commit()

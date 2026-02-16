@@ -115,6 +115,24 @@ services:
     networks:
       - ecommerce-network
 
+  # ------------------------------------------------------------
+  # 7. REVIEW SERVICE (Python/SQLite) - Port 30006
+  # ------------------------------------------------------------
+  review-service:
+    container_name: review-service
+    build: ./microservices/eCommerce-ReviewService
+    ports:
+      - "30006:30006"
+    environment:
+      - PORT=30006
+      # Internal Docker DNS for Product Service
+      - PRODUCT_SERVICE_URL=http://product-service:30002/api/v2/products
+    depends_on:
+      product-service:
+        condition: service_started
+    networks:
+      - ecommerce-network
+
 # ------------------------------------------------------------
 # NETWORKS
 # ------------------------------------------------------------

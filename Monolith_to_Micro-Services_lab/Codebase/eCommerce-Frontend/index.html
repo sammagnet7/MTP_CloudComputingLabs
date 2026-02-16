@@ -23,6 +23,7 @@
         .badge-java { background-color: #f89820; color: white; }    /* Java: Inventory, Order */
         .badge-legacy { background-color: #555; color: white; }     /* Monolith */
         .badge-orch { background-color: #7c3aed; color: white; }    /* Orchestrator */
+        .badge-rev { background-color: #e11d48; color: white; }     /* Reviews (Red/Pink) */
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -57,7 +58,7 @@
                         <span class="text-blue-600">Cat:30002</span>
                         <span class="text-orange-500">Inv:30001</span>
                         <span class="text-purple-600">Ord:30003</span>
-                        <span class="text-blue-600">Pay:30004</span>
+                        <span class="text-rose-600">Rev:30006</span>
                     </div>
 
                     <button @click="openCart" class="relative p-2 rounded-full hover:bg-slate-100 transition">
@@ -212,7 +213,7 @@
                     </div>
 
                     <div class="p-6">
-                        <div class="flex flex-col sm:flex-row gap-6">
+                        <div class="flex flex-col sm:flex-row gap-6 mb-8">
                             <div class="flex-shrink-0 flex items-center justify-center h-32 w-32 bg-indigo-50 rounded-lg text-6xl mx-auto sm:mx-0">
                                 {{ getIcon(selectedProduct.name) }}
                             </div>
@@ -221,7 +222,7 @@
                                     <span class="service-badge badge-py">Details: Product Svc</span>
                                     
                                     <span v-if="detailLoading" class="text-xs text-gray-400">
-                                        <span class="inline-block animate-spin mr-1">⟳</span> Checking Stock...
+                                        <span class="inline-block animate-spin mr-1">⟳</span> Aggregating...
                                     </span>
                                     <span v-else :class="currentStock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" 
                                           class="px-3 py-1 text-xs font-bold rounded-full flex items-center gap-2">
@@ -231,7 +232,39 @@
                                 </div>
                                 
                                 <p class="text-gray-600 text-sm mb-4">{{ selectedProduct.description }}</p>
-                                <h2 class="text-3xl font-bold text-gray-900 mb-6">Rs. {{ selectedProduct.price }}</h2>
+                                <h2 class="text-3xl font-bold text-gray-900">Rs. {{ selectedProduct.price }}</h2>
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-4">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-bold text-sm">Customer Reviews</h4>
+                                <span class="service-badge badge-rev">Reviews Svc :30006</span>
+                            </div>
+
+                            <div class="space-y-3 max-h-40 overflow-y-auto bg-gray-50 p-3 rounded mb-3 border border-gray-100">
+                                <div v-if="reviews.length === 0" class="text-xs text-gray-400 italic">No reviews yet. Be the first!</div>
+                                <div v-for="review in reviews" :key="review.id" class="text-sm border-b border-gray-200 last:border-0 pb-2">
+                                    <div class="flex justify-between">
+                                        <span class="font-bold text-slate-700">{{ review.userName }}</span>
+                                        <span class="text-yellow-500 text-xs">
+                                            {{ '★'.repeat(review.rating) }}<span class="text-gray-300">{{ '★'.repeat(5-review.rating) }}</span>
+                                        </span>
+                                    </div>
+                                    <p class="text-gray-600 text-xs mt-1">{{ review.comment }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <input v-model="newReview.comment" placeholder="Write a review..." class="flex-grow text-sm border rounded px-3 py-2 focus:outline-none focus:border-indigo-500">
+                                <select v-model="newReview.rating" class="text-sm border rounded bg-white w-16 text-center">
+                                    <option value="5">5 ★</option>
+                                    <option value="4">4 ★</option>
+                                    <option value="3">3 ★</option>
+                                    <option value="2">2 ★</option>
+                                    <option value="1">1 ★</option>
+                                </select>
+                                <button @click="submitReview" class="bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded hover:bg-indigo-700 transition">Post</button>
                             </div>
                         </div>
                     </div>
@@ -241,7 +274,7 @@
                         <button @click="addToCart(selectedProduct)" 
                                 :disabled="!detailLoading && currentStock === 0"
                                 class="px-6 py-2 bg-indigo-600 text-white rounded font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
-                            Add to Cart (via Order Svc)
+                            Add to Cart
                         </button>
                     </div>
                 </div>
@@ -285,168 +318,6 @@
 
 </div>
 
-<script>
-    const { createApp, ref, computed, onMounted } = Vue;
-
-    // 🏗️ MICROSERVICES GATEWAY CONFIG
-    const API = {
-        MONOLITH:  'http://localhost:30000/api',               // Legacy Auth
-        INVENTORY: 'http://localhost:30001/api/v2/inventory',  // Stock
-        PRODUCT:   'http://localhost:30002/api/v2/products',   // Catalog
-        ORDER:     'http://localhost:30003/api/v2/orders',     // Aggregator
-        PAYMENT:   'http://localhost:30004/api/v2/payments'    // Transactions
-    };
-
-    const USER_ID = 1;
-
-    createApp({
-        setup() {
-            // View State
-            const currentView = ref('home'); 
-            const dashboardTab = ref('orders');
-            const showCart = ref(false);
-            
-            // Data State
-            const products = ref([]);
-            const orders = ref([]);
-            const payments = ref([]);
-            const cart = ref([]);
-            
-            // UI State
-            const loading = ref(true);
-            const processing = ref(false);
-            const detailLoading = ref(false);
-            const currentStock = ref(0);
-            const selectedProduct = ref(null);
-            
-            // 1. FETCH CATALOG (Python Service)
-            const fetchProducts = async () => {
-                try {
-                    const res = await fetch(API.PRODUCT);
-                    if (res.ok) products.value = await res.json();
-                } catch(e) { showToast("Catalog Service Unavailable", "error"); } 
-                finally { loading.value = false; }
-            };
-
-            // 2. FETCH DASHBOARD DATA (Distributed)
-            const openDashboard = async () => {
-                currentView.value = 'dashboard';
-                orders.value = [];
-                payments.value = [];
-
-                // Fetch Orders from new Order Service
-                try {
-                    const oRes = await fetch(`${API.ORDER}/users/${USER_ID}`);
-                    if(oRes.ok) orders.value = await oRes.json();
-                } catch(e) { console.error("Order Service failed"); }
-
-                // Fetch Payments from new Payment Service
-                try {
-                    const pRes = await fetch(`${API.PAYMENT}/users/${USER_ID}`);
-                    if(pRes.ok) payments.value = await pRes.json();
-                } catch(e) { console.error("Payment Service failed"); }
-            };
-
-            // 3. PRODUCT DETAILS AGGREGATOR (Python + Java)
-            const openProductDetails = async (product) => {
-                selectedProduct.value = product;
-                detailLoading.value = true;
-                currentStock.value = 0; 
-                try {
-                    // Parallel Fetch: Get Price/Desc (Python) & Stock (Java)
-                    const [prodRes, stockRes] = await Promise.all([
-                        fetch(`${API.PRODUCT}/${product.id}`),
-                        fetch(`${API.INVENTORY}/${product.id}`)
-                    ]);
-                    
-                    if (stockRes.ok) currentStock.value = await stockRes.json();
-                } catch (e) { showToast("Failed to aggregate details", "error"); } 
-                finally { detailLoading.value = false; }
-            };
-
-            // 4. CART MANAGEMENT (Order Service)
-            // Note: In this arch, the Order Service manages the cart state.
-            const addToCart = async (product) => {
-                try {
-                    await fetch(`${API.ORDER}/cart/${USER_ID}/add`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ productId: product.id, quantity: 1 })
-                    });
-                    showToast("Added to Cart (Order Svc)");
-                    selectedProduct.value = null;
-                } catch(e) { showToast("Failed to add to cart", "error"); }
-            };
-
-            const openCart = async () => {
-                showCart.value = true;
-                // In a real app we'd fetch the cart from the server here.
-                // For this demo, we assume the user just added items and we rely on the checkout to succeed.
-                // Since the Order Service has an in-memory cart, we can't easily "GET" it without a GET endpoint.
-                // We will simulate the cart UI based on local actions, but actual state is on server.
-                // To keep it simple for the demo, we won't sync GET cart, just rely on the add actions.
-                if(cart.value.length === 0) {
-                     // Temporary hack for demo visualization if we refreshed page
-                     // In real implementation: const res = await fetch(`${API.ORDER}/cart/${USER_ID}`);
-                }
-            };
-            
-            // 5. ORCHESTRATED CHECKOUT (Order Service)
-            const checkout = async () => {
-                processing.value = true;
-                try {
-                    const res = await fetch(`${API.ORDER}/checkout/${USER_ID}`, { method: 'POST' });
-                    
-                    if (res.ok) {
-                        const receipt = await res.json();
-                        showToast(`Order #${receipt.id} Confirmed! 🎉`, "success");
-                        cart.value = []; // Clear local visual cart
-                        showCart.value = false;
-                        openDashboard();
-                    } else {
-                        throw new Error("Checkout failed");
-                    }
-                } catch (e) { 
-                    showToast("Transaction Failed (Check Service Logs)", "error"); 
-                } finally { processing.value = false; }
-            };
-
-            // UI Helpers
-            const getIcon = (name) => {
-                if (!name) return '📦';
-                if (name.includes('Laptop')) return '💻';
-                if (name.includes('Phone')) return '📱';
-                if (name.includes('Mouse')) return '🖱️';
-                return '📦';
-            };
-            
-            const formatDate = (d) => new Date(d).toLocaleDateString('en-IN');
-            
-            // Intercept local cart add to show in UI immediately (Optimistic UI)
-            const originalAddToCart = addToCart;
-            const enhancedAddToCart = async (p) => {
-                await originalAddToCart(p);
-                cart.value.push({ productId: p.id, productName: p.name, quantity: 1 });
-            };
-
-            const showToast = (msg, type) => Toastify({ 
-                text: msg, duration: 4000, 
-                style: { background: type === 'error' ? "#ef4444" : "#10b981", borderRadius: "8px" },
-                gravity: "bottom" 
-            }).showToast();
-
-            onMounted(fetchProducts);
-
-            return { 
-                currentView, dashboardTab, openDashboard,
-                products, orders, payments, cart, showCart, 
-                loading, processing, detailLoading, 
-                selectedProduct, currentStock, 
-                openProductDetails, addToCart: enhancedAddToCart, checkout, openCart,
-                getIcon, formatDate, cartCount: computed(() => cart.value.length)
-            };
-        }
-    }).mount('#app');
-</script>
+<script src="./script.js"></script>
 </body>
 </html>

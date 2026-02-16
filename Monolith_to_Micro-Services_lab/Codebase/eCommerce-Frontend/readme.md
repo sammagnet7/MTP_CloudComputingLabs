@@ -1,109 +1,123 @@
-# 🎨 MicroShop Frontend (SPA)
+# 🛍️ Monolith to Microservices: Strangler Fig Migration
 
-This is the client-facing **Single Page Application (SPA)** for the distributed eCommerce platform.
+This repository demonstrates a complete transformation of a legacy **Java Spring Boot Monolith** into a distributed **Microservices Architecture**.
 
-It is built with **Vue.js 3** (using the Composition API) and **Tailwind CSS**. It is designed to demonstrate the **Microservices Aggregation** pattern, where a single frontend fetches data from multiple distinct backend services seamlessly.
-
----
-
-## 🏗️ Architecture
-
-This frontend is a "No-Build" application. It runs directly in the browser using CDN imports, making it lightweight and easy to inspect.
-
-It connects to the following backend services:
-
-| Feature | Backend Service | Port | Tech Stack |
-| --- | --- | --- | --- |
-| **Product Catalog** | Product Service | `:30002` | Python (FastAPI) |
-| **Live Stock** | Inventory Service | `:30001` | Java (Spring Boot) |
-| **Cart & Checkout** | Order Service | `:30003` | Java (Spring Boot) |
-| **Payment History** | Payment Service | `:30004` | Python (FastAPI) |
-| **User Auth** | Monolith (Legacy) | `:30000` | Java (Spring Boot) |
+The application uses the **Strangler Fig Pattern** to incrementally replace functionality. The frontend (Vue.js) acts as a **BFF (Backend for Frontend)**, aggregating data from **6 distributed services** to create a seamless user experience.
 
 ---
 
-## 🛠️ Tech Stack
+## 🏗️ Architecture Overview
 
-* **Framework:** Vue.js 3 (Global Build via CDN)
-* **Styling:** Tailwind CSS (via CDN)
-* **Server:** Nginx (Alpine Docker Image)
-* **Notifications:** Toastify.js
+The system is split into polyglot microservices (Java & Python) communicating via REST.
+
+| Service | Port | Tech Stack | Role | Dependencies |
+| --- | --- | --- | --- | --- |
+| **Monolith** | `30000` | Java / Spring | **Monolith eCommerce** |  |
+| **Inventory** | `30001` | Java / Postgres | **Stock Management** | Database-per-service pattern. |
+| **Product** | `30002` | Python / FastAPI | **Catalog** | Single Source of Truth for products. |
+| **Order** | `30003` | Java / H2 | **Orchestrator** | Coordinates Checkout (Cart → Pay → Stock). |
+| **Payment** | `30004` | Python / SQLite | **Transactions** | Mock payment gateway. |
+| **Reviews** | `30006` | Node / Express* | **User Sentiment** | Verifies IDs with **Product Service**. |
+
+*(Note: Reviews service tech stack is illustrative; works with any HTTP server).*
+
+---
+
+## 📋 Prerequisites
+
+* **Java:** JDK 17+
+* **Python:** 3.9+
+* **Docker:** Recommended for databases.
+* **Node.js:** (Optional, if running Reviews locally without Docker)
 
 ---
 
 ## 🚀 How to Run
 
+### 1. Start Infrastructure (Databases)
 
-1. Open your browser to: **[http://localhost:30005](http://localhost:30005)**
+Ensure PostgreSQL is running for the Inventory Service.
 
-### Option A: Standalone Docker Run (Nginx)
-
-If you want to run *only* the frontend container manually:
-
-1. Navigate to the `eCommerce-Frontend` directory.
-2. Run the following command:
 ```bash
-docker run -d --name frontend-ui \
-  -p 30005:80 \
-  -v $(pwd):/usr/share/nginx/html \
-  nginx:alpine
+docker run --name inventory-db \
+  -e POSTGRES_DB=inventorydb \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -p 5432:5432 \
+  -d postgres:15
 
 ```
 
+### 2. Start Services
 
+Open separate terminals for each service:
 
-### Option B: Local Python Server
+1. **Monolith (Frontend Host):**
+`cd eCommerce-Monolith && ./mvnw spring-boot:run`
+2. **Inventory Service:**
+`cd eCommerce-InventoryService && ./mvnw spring-boot:run`
+3. **Product Catalog:**
+`cd eCommerce-ProductService && uvicorn main:app --port 30002`
+4. **Order Service:**
+`cd eCommerce-OrderService && ./mvnw spring-boot:run`
+5. **Payment Service:**
+`cd eCommerce-PaymentService && uvicorn main:app --port 30004`
+6. **Reviews Service:**
+`cd eCommerce-ReviewsService && npm start` (or equivalent python command)
 
-Since this is a static HTML file, you can also serve it using Python's built-in server:
+### 3. Access the Application
 
-```bash
-# Run inside the eCommerce-Frontend folder
-python3 -m http.server 30005
+Open **[http://localhost:30000](https://www.google.com/search?q=http://localhost:30000)** in your browser.
 
-```
+* **Note:** The HTML file now loads logic from `script.js`. Ensure your browser cache is cleared if updates don't appear.
 
 ---
 
-## 🧩 Key Features & Implementation
+## 📡 API Reference
 
-### 1. Product Details Aggregation
+### 1. 🐍 Product Catalog (`:30002`)
 
-When you click "View Details", the frontend performs **Client-Side Aggregation**:
+*Single source of truth for item details.*
 
-1. Fetches **Description & Price** from the **Product Service** (Python).
-2. Fetches **Real-time Stock** from the **Inventory Service** (Java).
-3. Merges the data to display the full modal.
+* `GET /api/v2/products` - List all products.
+* `GET /api/v2/products/{id}` - Get details (Name, Price, Desc).
 
-### 2. Orchestrated Checkout
+### 2. ☕ Inventory Service (`:30001`)
 
-When you click **Checkout**:
+*Manages stock levels atomically.*
 
-1. The frontend sends a request to the **Order Service** (Aggregator).
-2. The Order Service internally calls Inventory (to deduct stock) and Payment (to charge money).
-3. The frontend receives a simple "Success" or "Fail" response.
+* `GET /api/v2/inventory/{id}` - Get live stock count (int).
+* `POST /api/v2/inventory/reduce` - Deduct stock.
+* **Payload:** `{ "productId": 1, "quantity": 1 }`
 
-### 3. Distributed Dashboard
 
-The "My Dashboard" section demonstrates the **Distributed Data** pattern:
 
-* **Order Tab:** Fetches history from the **Order Service DB**.
-* **Payments Tab:** Fetches transaction logs from the **Payment Service DB**.
+### 3. ⭐ Reviews Service (`:30006`) **(NEW)**
 
----
+*Manages user ratings. Decoupled from Catalog.*
 
-## ⚙️ Configuration
+* `GET /api/v2/reviews/products/{id}` - Get all reviews for a product.
+* `POST /api/v2/reviews/products/{id}` - Add a review.
+* **Payload:** `{ "userName": "Alice", "rating": 5, "comment": "Great!" }`
+* *Constraint:* Validates `productId` against **Product Service** before saving.
 
-The API endpoints are hardcoded in the `index.html` file (inside the `<script>` tag) for demonstration purposes:
 
-```javascript
-const API = {
-    MONOLITH:  'http://localhost:30000/api',
-    INVENTORY: 'http://localhost:30001/api/v2/inventory',
-    PRODUCT:   'http://localhost:30002/api/v2/products',
-    ORDER:     'http://localhost:30003/api/v2/orders',
-    PAYMENT:   'http://localhost:30004/api/v2/payments'
-};
 
-```
+### 4. 🧠 Order Service (`:30003`)
 
-If you change the ports of your backend services, ensure you update these constants in `index.html`.
+*The Central Nervous System. Orchestrates the checkout transaction.*
+
+* `POST /api/v2/orders/cart/{uid}/add` - Add item to cart.
+* `POST /api/v2/orders/checkout/{uid}` - **Trigger Checkout.**
+* *Flow:* Validates Price (Product Svc) -> Deducts Stock (Inventory Svc) -> Charges Card (Payment Svc) -> Saves Order.
+
+
+* `GET /api/v2/orders/users/{uid}` - Get order history.
+
+### 5. 💳 Payment Service (`:30004`)
+
+*Handles monetary transactions.*
+
+* `POST /api/v2/payments/` - Process payment.
+* `GET /api/v2/payments/users/{uid}` - Get transaction history.
+
