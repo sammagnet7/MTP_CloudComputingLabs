@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MicroShop | Fully Distributed</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        
+        /* Service Badges */
+        .service-badge { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-flex; align-items: center; gap: 4px;}
+        .badge-py { background-color: #3776AB; color: white; }      /* Python: Product, Payment */
+        .badge-java { background-color: #f89820; color: white; }    /* Java: Inventory, Order */
+        .badge-legacy { background-color: #555; color: white; }     /* Monolith */
+        .badge-orch { background-color: #7c3aed; color: white; }    /* Orchestrator */
+        .badge-rev { background-color: #e11d48; color: white; }     /* Reviews (Red/Pink) */
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+<div id="app" class="min-h-screen flex flex-col">
+
+    <nav class="glass fixed w-full z-10 border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-6">
+                    <div @click="currentView = 'home'" class="flex items-center gap-2 cursor-pointer">
+                        <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">μ</div>
+                        <span class="font-bold text-xl tracking-tight">MicroShop</span>
+                    </div>
+                    
+                    <div class="hidden md:flex gap-4">
+                        <button @click="currentView = 'home'" 
+                            :class="currentView === 'home' ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-800'"
+                            class="text-sm transition">
+                            Products
+                        </button>
+                        <button @click="openDashboard" 
+                            :class="currentView === 'dashboard' ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-800'"
+                            class="text-sm transition">
+                            My Dashboard
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="hidden xl:flex gap-2 text-[10px] uppercase font-bold tracking-wider text-gray-400">
+                        <span class="text-blue-600">Cat:30002</span>
+                        <span class="text-orange-500">Inv:30001</span>
+                        <span class="text-purple-600">Ord:30003</span>
+                        <span class="text-rose-600">Rev:30006</span>
+                    </div>
+
+                    <button @click="openCart" class="relative p-2 rounded-full hover:bg-slate-100 transition">
+                        <span class="text-2xl">🛒</span>
+                        <span v-if="cartCount > 0" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold text-white bg-red-500 rounded-full">
+                            {{ cartCount }}
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-24 pb-12 px-4 max-w-7xl mx-auto w-full flex-grow">
+        
+        <div v-if="currentView === 'home'">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900">Featured Products</h1>
+                    <span class="service-badge badge-py ml-1">Catalog Service :30002</span>
+                </div>
+            </div>
+            
+            <div v-if="loading" class="flex justify-center py-20">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div v-for="product in products" :key="product.id" 
+                     class="bg-white rounded-2xl shadow-sm hover:shadow-xl transition duration-300 border border-slate-100 overflow-hidden group flex flex-col">
+                    
+                    <div class="h-48 bg-slate-100 flex items-center justify-center text-6xl group-hover:scale-110 transition duration-500 cursor-pointer"
+                         @click="openProductDetails(product)">
+                        {{ getIcon(product.name) }}
+                    </div>
+
+                    <div class="p-6 flex flex-col flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs font-semibold text-indigo-600 uppercase tracking-wide">ID: {{ product.id }}</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 mb-2">{{ product.name }}</h3>
+                        <p class="text-slate-500 text-sm line-clamp-2 mb-4">{{ product.description || 'No description available.' }}</p>
+                        
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="text-2xl font-bold text-slate-800">Rs. {{ product.price }}</span>
+                            <button @click="openProductDetails(product)" 
+                                    class="text-indigo-600 font-semibold hover:text-indigo-800 text-sm">
+                                View Details &rarr;
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="currentView === 'dashboard'" class="max-w-4xl mx-auto">
+            <div class="flex items-center gap-4 mb-8">
+                <div class="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center text-3xl">👤</div>
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">Little Buddha</h1>
+                    <div class="flex items-center gap-2">
+                        <p class="text-slate-500 text-sm">User ID: 1 • Premium Member</p>
+                        <span class="service-badge badge-legacy">Auth: Monolith</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex border-b border-gray-200 mb-6">
+                <button @click="dashboardTab = 'orders'" 
+                        :class="dashboardTab === 'orders' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                        class="px-6 py-3 border-b-2 font-medium text-sm transition">
+                    📦 Order History
+                </button>
+                <button @click="dashboardTab = 'payments'" 
+                        :class="dashboardTab === 'payments' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                        class="px-6 py-3 border-b-2 font-medium text-sm transition">
+                    💳 Payments
+                </button>
+            </div>
+
+            <div v-if="dashboardTab === 'orders'">
+                <div class="mb-4 flex justify-end">
+                     <span class="service-badge badge-java">Source: Order Service :30003</span>
+                </div>
+                
+                <div v-if="orders.length === 0" class="text-center py-10 bg-white rounded-lg border border-dashed border-gray-300">
+                    <p class="text-gray-500">No orders found in Microservice DB.</p>
+                </div>
+                <div v-else class="space-y-4">
+                    <div v-for="order in orders" :key="order.id" class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 flex justify-between items-center transition hover:shadow-md">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-bold text-lg">Order #{{ order.id }}</span>
+                                <span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">{{ order.status }}</span>
+                            </div>
+                            <p class="text-xs text-gray-400">Placed on {{ formatDate(order.createdAt || new Date()) }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xl font-bold text-slate-800">Rs. {{ order.totalAmount }}</p>
+                            <div class="text-xs text-gray-400 mt-1" v-if="order.items">{{ order.items.length }} items</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="dashboardTab === 'payments'">
+                <div class="mb-4 flex justify-end">
+                     <span class="service-badge badge-py">Source: Payment Service :30004</span>
+                </div>
+                
+                <div v-if="payments.length === 0" class="text-center py-10 bg-white rounded-lg border border-dashed border-gray-300">
+                    <p class="text-gray-500">No payments found.</p>
+                </div>
+                <div v-else class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="pay in payments" :key="pay.id">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">{{ pay.transactionId || 'N/A' }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">#{{ pay.orderId }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        {{ pay.status }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">Rs. {{ pay.amount }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <Transition name="fade">
+        <div v-if="selectedProduct" class="fixed inset-0 z-50 overflow-y-auto" role="dialog">
+            <div class="flex items-center justify-center min-h-screen px-4">
+                <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" @click="selectedProduct = null"></div>
+                
+                <div class="relative bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden transform transition-all">
+                    <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-white">{{ selectedProduct.name }}</h3>
+                        <button @click="selectedProduct = null" class="text-white hover:bg-indigo-700 rounded-full p-1">✕</button>
+                    </div>
+
+                    <div class="p-6">
+                        <div class="flex flex-col sm:flex-row gap-6 mb-8">
+                            <div class="flex-shrink-0 flex items-center justify-center h-32 w-32 bg-indigo-50 rounded-lg text-6xl mx-auto sm:mx-0">
+                                {{ getIcon(selectedProduct.name) }}
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="service-badge badge-py">Details: Product Svc</span>
+                                    
+                                    <span v-if="detailLoading" class="text-xs text-gray-400">
+                                        <span class="inline-block animate-spin mr-1">⟳</span> Aggregating...
+                                    </span>
+                                    <span v-else :class="currentStock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" 
+                                          class="px-3 py-1 text-xs font-bold rounded-full flex items-center gap-2">
+                                        {{ currentStock > 0 ? currentStock + ' in Stock' : 'Out of Stock' }}
+                                        <span class="service-badge badge-java" style="font-size: 0.5rem;">Inv Svc</span>
+                                    </span>
+                                </div>
+                                
+                                <p class="text-gray-600 text-sm mb-4">{{ selectedProduct.description }}</p>
+                                <h2 class="text-3xl font-bold text-gray-900">Rs. {{ selectedProduct.price }}</h2>
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-4">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-bold text-sm">Customer Reviews</h4>
+                                <span class="service-badge badge-rev">Reviews Svc :30006</span>
+                            </div>
+
+                            <div class="space-y-3 max-h-40 overflow-y-auto bg-gray-50 p-3 rounded mb-3 border border-gray-100">
+                                <div v-if="reviews.length === 0" class="text-xs text-gray-400 italic">No reviews yet. Be the first!</div>
+                                <div v-for="review in reviews" :key="review.id" class="text-sm border-b border-gray-200 last:border-0 pb-2">
+                                    <div class="flex justify-between">
+                                        <span class="font-bold text-slate-700">{{ review.userName }}</span>
+                                        <span class="text-yellow-500 text-xs">
+                                            {{ '★'.repeat(review.rating) }}<span class="text-gray-300">{{ '★'.repeat(5-review.rating) }}</span>
+                                        </span>
+                                    </div>
+                                    <p class="text-gray-600 text-xs mt-1">{{ review.comment }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <input v-model="newReview.comment" placeholder="Write a review..." class="flex-grow text-sm border rounded px-3 py-2 focus:outline-none focus:border-indigo-500">
+                                <select v-model="newReview.rating" class="text-sm border rounded bg-white w-16 text-center">
+                                    <option value="5">5 ★</option>
+                                    <option value="4">4 ★</option>
+                                    <option value="3">3 ★</option>
+                                    <option value="2">2 ★</option>
+                                    <option value="1">1 ★</option>
+                                </select>
+                                <button @click="submitReview" class="bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded hover:bg-indigo-700 transition">Post</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+                        <button @click="selectedProduct = null" class="px-4 py-2 border rounded text-sm hover:bg-gray-100">Close</button>
+                        <button @click="addToCart(selectedProduct)" 
+                                :disabled="!detailLoading && currentStock === 0"
+                                class="px-6 py-2 bg-indigo-600 text-white rounded font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                            Add to Cart
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Transition>
+
+    <div v-if="showCart" class="fixed inset-0 z-50 flex justify-end">
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" @click="showCart = false"></div>
+        <div class="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col transform transition-transform duration-300">
+            <div class="p-6 border-b flex justify-between items-center bg-gray-50">
+                <h2 class="text-xl font-bold">Your Cart</h2>
+                <div class="service-badge badge-orch ml-2">Order Svc :30003</div>
+                <button @click="showCart = false" class="text-gray-500 hover:text-black">✕</button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6 space-y-4">
+                <div v-if="cart.length === 0" class="text-center py-20 text-gray-400">Your cart is empty.</div>
+                <div v-for="(item, index) in cart" :key="index" class="flex items-center bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <div class="text-3xl">{{ getIcon(item.productName || 'Item') }}</div>
+                    <div class="ml-4 flex-1">
+                        <h3 class="font-bold text-sm">{{ item.productName || 'Product ' + item.productId }}</h3>
+                        <p class="text-xs text-gray-500">Qty: {{ item.quantity }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 border-t bg-gray-50">
+                <div class="text-xs text-center text-gray-500 mb-2 p-2 bg-purple-50 rounded border border-purple-100">
+                    Checkout triggers <strong>Order Orchestrator</strong>:<br>
+                    Order → Product(Price) + Inventory(Stock) + Payment(Charge)
+                </div>
+                <button @click="checkout" :disabled="processing || cart.length === 0"
+                    class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 disabled:opacity-50 transition flex justify-center items-center gap-2">
+                    <span v-if="processing" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                    {{ processing ? 'Processing...' : 'Checkout (Orchestrated)' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="./script.js"></script>
+</body>
+</html>
